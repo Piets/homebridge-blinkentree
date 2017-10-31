@@ -1,0 +1,27 @@
+{
+  "name": "homebridge-blinkentree",
+  "description": "Blinkentree plugin for homebridge to control blinking trees.",
+  "keywords": [
+    "homebridge-plugin"
+  ],
+  "version": "0.0.1",
+  "license": "MIT",
+  "author": "@Piets",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Piets/homebridge-blinkentree.git"
+  },
+  "preferGlobal": true,
+  "engines": {
+    "node": ">=4.3.2",
+    "homebridge": ">=0.4.29"
+  },
+  "dependencies": {
+    "colorsys": "^1.0.17",
+    "request": "^2.83.0"
+  }
+}
