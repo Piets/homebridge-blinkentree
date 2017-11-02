@@ -22,6 +22,8 @@ function blinkentree(log, config) {
     this.saturation = 0;
     this.hue = 0;
     this.rainbow = 0;
+
+	this.updateRemoteState(this);
 }
 
 blinkentree.prototype = {
@@ -38,9 +40,7 @@ blinkentree.prototype = {
         lightbulbService
         .getCharacteristic(Characteristic.On)
         .on('get', function(callback) {
-        	bulb.updateRemoteState(function() {
-        		callback(null, bulb.power);
-        	});
+        	callback(null, bulb.power);
         })
         .on('set', function(value, callback) {
             bulb.power = value;
@@ -52,9 +52,7 @@ blinkentree.prototype = {
         lightbulbService
         .addCharacteristic(Characteristic.Brightness)
         .on('get', function(callback) {
-        	bulb.updateRemoteState(function() {
-        		callback(null, bulb.brightness);
-        	});
+        	callback(null, bulb.brightness);
         })
         .on('set', function(value, callback) {
             bulb.brightness = value;
@@ -66,9 +64,7 @@ blinkentree.prototype = {
         lightbulbService
         .addCharacteristic(Characteristic.Hue)
         .on('get', function(callback) {
-        	bulb.updateRemoteState(function() {
-        		callback(null, bulb.hue);
-        	});
+        	callback(null, bulb.hue);
         })
         .on('set', function(value, callback) {
             bulb.hue = value;
@@ -80,9 +76,7 @@ blinkentree.prototype = {
         lightbulbService
         .addCharacteristic(Characteristic.Saturation)
         .on('get', function(callback) {
-        	bulb.updateRemoteState(function() {
-        		callback(null, bulb.saturation);
-        	});
+        	callback(null, bulb.saturation);
         })
         .on('set', function(value, callback) {
             bulb.saturation = value;
@@ -95,9 +89,7 @@ blinkentree.prototype = {
         rainbowService
         .getCharacteristic(Characteristic.On)
         .on('get', function(callback) {
-        	bulb.updateRemoteState(function() {
-        		callback(null, bulb.rainbow);
-        	});
+        	callback(null, bulb.rainbow);
         })
         .on('set', function(value, callback) {
             bulb.rainbow = value;
@@ -135,33 +127,43 @@ blinkentree.prototype = {
 		});
     },
 
-    updateRemoteState: function (callback) {
-    	var bulb = this;
-
-    	request(this.baseURL+'/getColors', function (error, response, body) {
+    updateRemoteState: function (bulb) {
+    	request(bulb.baseURL+'/getColors', function (error, response, body) {
     		if (error) {
-        		bulb.log("Error while updating color: " + error);
+        		bulb.log("Error while updating current state: " + error);
         	}
 
 			if (!error && response && response.statusCode == 200) {
 				var state = JSON.parse(body);
 
 				var color = colorsys.rgb_to_hsv({r: state.red, g: state.green, b: state.blue});
+				if (bulb.hue != color.h || bulb.saturation != color.s || bulb.brightness != color.v) {
+					bulb.hue = color.h;
+					bulb.saturation = color.s;
+					bulb.brightness = color.v;
+					
+					bulb.lightbulbService
+					.updateCharacteristic(Characteristic.Hue, bulb.hue)
+					.updateCharacteristic(Characteristic.Saturation, bulb.saturation)
+					.updateCharacteristic(Characteristic.Brightness, bulb.brightness);
+				}
 
-				bulb.hue = color.h
-				bulb.saturation = color.s
-				bulb.brightness = color.v
+				var power = (bulb.brightness > 0);
+				if (bulb.power != power) {
+					bulb.power = power;
+					
+					bulb.lightbulbService.updateCharacteristic(Characteristic.On, bulb.power);
+				}
 
-				bulb.rainbow = state.rainbow;
+				if (bulb.rainbow != state.rainbow) {
+					bulb.rainbow = state.rainbow;
 
-				if (bulb.brightness > 0) {
-					bulb.power = true;
-				} else {
-					bulb.power = false;
+					bulb.rainbowService.updateCharacteristic(Characteristic.On, bulb.rainbow);
 				}
 			}
 
-			callback();
+			// Update State again in a few seconds
+			setTimeout(bulb.updateRemoteState, 30000, bulb);
 		});
     }  
 }
