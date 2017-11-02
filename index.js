@@ -23,7 +23,7 @@ function blinkentree(log, config) {
     this.hue = 0;
     this.rainbow = 0;
 
-	this.updateRemoteState(this);
+	this.updateRemoteState(this, true);
 }
 
 blinkentree.prototype = {
@@ -40,6 +40,7 @@ blinkentree.prototype = {
         lightbulbService
         .getCharacteristic(Characteristic.On)
         .on('get', function(callback) {
+           bulb.updateRemoteState(bulb, false);
         	callback(null, bulb.power);
         })
         .on('set', function(value, callback) {
@@ -52,6 +53,7 @@ blinkentree.prototype = {
         lightbulbService
         .addCharacteristic(Characteristic.Brightness)
         .on('get', function(callback) {
+           bulb.updateRemoteState(bulb, false);
         	callback(null, bulb.brightness);
         })
         .on('set', function(value, callback) {
@@ -64,6 +66,7 @@ blinkentree.prototype = {
         lightbulbService
         .addCharacteristic(Characteristic.Hue)
         .on('get', function(callback) {
+           bulb.updateRemoteState(bulb, false);
         	callback(null, bulb.hue);
         })
         .on('set', function(value, callback) {
@@ -76,6 +79,7 @@ blinkentree.prototype = {
         lightbulbService
         .addCharacteristic(Characteristic.Saturation)
         .on('get', function(callback) {
+           bulb.updateRemoteState(bulb, false);
         	callback(null, bulb.saturation);
         })
         .on('set', function(value, callback) {
@@ -89,6 +93,7 @@ blinkentree.prototype = {
         rainbowService
         .getCharacteristic(Characteristic.On)
         .on('get', function(callback) {
+           bulb.updateRemoteState(bulb, false);
         	callback(null, bulb.rainbow);
         })
         .on('set', function(value, callback) {
@@ -127,7 +132,7 @@ blinkentree.prototype = {
 		});
     },
 
-    updateRemoteState: function (bulb) {
+    updateRemoteState: function (bulb, repeat) {
     	request(bulb.baseURL+'/getColors', function (error, response, body) {
     		if (error) {
         		bulb.log("Error while updating current state: " + error);
@@ -162,8 +167,10 @@ blinkentree.prototype = {
 				}
 			}
 
-			// Update State again in a few seconds
-			setTimeout(bulb.updateRemoteState, 30000, bulb);
+           if (repeat) {
+			    // Update State again in a few seconds
+			    setTimeout(bulb.updateRemoteState, 30000, bulb, repeat);
+           }
 		});
     }  
 }
